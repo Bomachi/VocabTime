@@ -1,4 +1,4 @@
-import os, datetime, secrets, csv, random, json
+import os, datetime, secrets, random, json
 from datetime import date
 from fastapi import FastAPI, Depends, HTTPException, Response, Request, Form
 from fastapi.middleware.cors import CORSMiddleware
@@ -45,13 +45,6 @@ def _load_wordbank() -> List[Dict]:
 
     if p.suffix.lower() == ".json":
         items = json.loads(p.read_text("utf-8"))
-    elif p.suffix.lower() == ".csv":
-        rows = []
-        with p.open("r", encoding="utf-8-sig", newline="") as f:
-            reader = csv.DictReader(f)
-            for r in reader:
-                rows.append(r)
-        items = rows
     else:
         try:
             items = json.loads(p.read_text("utf-8"))
