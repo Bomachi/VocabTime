@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+sqlmodel
+bcrypt
+itsdangerous
+python-multipart
+httpx
+python-dotenv
