@@ -130,7 +130,11 @@ COOKIE_NAME = "session"
 COOKIE_PATH = "/"
 COOKIE_SAMESITE = "lax"
 COOKIE_SECURE = False
-engine = create_engine(DB_URL, connect_args={"check_same_thread": False})
+connect_args = {}
+if DB_URL.startswith("sqlite"):
+    connect_args = {"check_same_thread": False}
+
+engine = create_engine(DB_URL, connect_args=connect_args)
 signer = URLSafeSerializer(SECRET)
 
 app = FastAPI(title="Vocab Time Capsule Web")
