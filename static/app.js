@@ -334,22 +334,26 @@ function AuthView(){
       )
     ),
 
-    h("div", { class: "card" },
-      h("div", { class: "card-title" }, "Sign in"),
-      h("form", { onSubmit: signin },
-        h("input", { id: "signin-email", type: "email", placeholder: "อีเมล", required: true }),
-        h("input", { id: "signin-pass", type: "password", placeholder: "รหัสผ่าน", required: true, style:{marginLeft:"8px"} }),
-        h("button", { type: "submit", style:{marginLeft:"8px"} }, "Sign in")
-      )
-    ),
+    h("div", { class: "grid2" },
 
-    h("div", { class: "card" },
-      h("div", { class: "card-title" }, "Sign up"),
-      h("form", { onSubmit: signup },
-        h("input", { id: "signup-email", type: "email", placeholder: "อีเมล", required: true }),
-        h("input", { id: "signup-pass", type: "password", placeholder: "รหัสผ่าน", required: true, style:{marginLeft:"8px"} }),
-        h("button", { type: "submit", style:{marginLeft:"8px"} }, "Sign up")
+      h("div", { class: "card card-auth" },
+        h("div", { class: "card-title" }, "Sign in"),
+        h("form", { onSubmit: signin },
+          h("input", { id: "signin-email", type: "email", placeholder: "อีเมล", required: true }),
+          h("input", { id: "signin-pass", type: "password", placeholder: "รหัสผ่าน", required: true, style:{marginLeft:"8px", marginRight:"8px"} }),
+          h("button", { type: "submit" }, "Sign in")
+        )
+      ),
+
+      h("div", { class: "card card-auth" },
+        h("div", { class: "card-title" }, "Sign up"),
+        h("form", { onSubmit: signup },
+          h("input", { id: "signup-email", type: "email", placeholder: "อีเมล", required: true }),
+          h("input", { id: "signup-pass", type: "password", placeholder: "รหัสผ่าน", required: true, style:{marginLeft:"8px", marginRight:"8px"} }),
+          h("button", { type: "submit" }, "Sign up")
+        )
       )
+
     ),
 
     h("div", { class: "card" },

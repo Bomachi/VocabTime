@@ -109,6 +109,21 @@ th{ text-align:left; color:#a7b0bd; font-weight:600; }
   .grid2 > *{ padding-inline: 0; }
 }
 
+.card-auth form {
+  display: flex;
+  align-items: center;
+}
+
+.card-auth form button[type="submit"] {
+  margin-left: auto;
+}
+
+.card-auth form input[type="email"],
+.card-auth form input[type="password"] {
+  flex: 1;
+  min-width: 130px;
+}
+
 button {
   appearance: none;
   -webkit-appearance: none;
