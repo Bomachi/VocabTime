@@ -1,8 +1,8 @@
 :root{
   --card-bg: rgba(255,255,255,.04);
   --border: rgba(255,255,255,.08);
-  --fg: #e9eef5;
-  --muted:#a7b0bd;
+  --fg: #ffffff;
+  --muted:#d0d2d6;
 }
 
 *{ box-sizing: border-box; }
