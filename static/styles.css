@@ -193,3 +193,58 @@ select:focus-visible {
   border-radius:10px; padding:10px 14px; font-weight:700; text-decoration:none;
 }
 .btn-google:hover{ filter:brightness(0.96); }
+body.light-mode {
+  --card-bg: #ffffff;
+  --border: #dfe1e5;
+  --fg: #202124;
+  --muted: #5f6368;
+  background:
+    radial-gradient(1200px 600px at 15% -10%, #dbeafe 0%, transparent 60%),
+    radial-gradient(1200px 600px at 85% -10%, #e9d5ff 0%, transparent 60%),
+    #f8f9fa;
+}
+
+body.light-mode a {
+  color: #1a73e8;
+}
+
+body.light-mode input[type="text"],
+body.light-mode input[type="email"],
+body.light-mode input[type="password"],
+body.light-mode select {
+  background: #ffffff;
+  color: var(--fg);
+  border: 1px solid var(--border);
+}
+
+body.light-mode button,
+body.light-mode .btn-xs {
+  background: #f8f9fa;
+  color: var(--fg);
+  border: 1px solid var(--border);
+}
+
+body.light-mode .ghost {
+  background: transparent;
+}
+
+body.light-mode button:hover,
+body.light-mode .ghost:hover,
+body.light-mode .btn-xs:hover {
+  border-color: #cdd1d6;
+  filter: brightness(0.98);
+}
+
+body.light-mode th {
+  color: #374151;
+}
+
+body.light-mode .badge {
+  background: #f1f3f4;
+  border: 1px solid var(--border);
+}
+
+body.light-mode .btn-google {
+  background: #fff;
+  color: #111827;
+}

@@ -1,3 +1,10 @@
+(function() {
+  const savedTheme = localStorage.getItem("theme");
+  if (savedTheme === "light") {
+    document.body.classList.add("light-mode");
+  }
+})();
+
 function $(sel, root) { return (root || document).querySelector(sel); }
 function h(tag, props, ...children) {
   const el = document.createElement(tag);
@@ -33,7 +40,15 @@ function fmtDate(iso) {
   try { return new Date(iso).toISOString().slice(0, 10); } catch { return iso; }
 }
 function _norm(s) { return (s || "").toString().trim().toLowerCase(); }
-
+function toggleTheme() {
+  if (document.body.classList.contains("light-mode")) {
+    document.body.classList.remove("light-mode");
+    localStorage.setItem("theme", "dark");
+  } else {
+    document.body.classList.add("light-mode");
+    localStorage.setItem("theme", "light");
+  }
+}
 const state = {
   me: null,
   vocab: [],
@@ -226,6 +241,7 @@ function Header() {
     ),
     h("div", { class: "right" },
       state.me ? h("span", { class: "badge" }, state.me.email || "") : null,
+      h("button", { class: "ghost", onClick: toggleTheme, title: "เปลี่ยนธีม" }, "☀️/🌙"),
       state.me ? h("button", { class: "ghost", onClick: resetAll }, "Reset") : null,
       state.me ? h("button", { class: "ghost", onClick: logout }, "Logout") : null
     )
