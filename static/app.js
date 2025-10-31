@@ -58,6 +58,8 @@ const state = {
   check: null,
   view: "loading",
   revealed: new Set(),
+  listSearch: "",
+  listPage: 1
 };
 
 async function loadMe() {
@@ -113,6 +115,8 @@ async function logout() {
   state.day = 1;
   state.answer = "";
   state.check = null;
+  state.listSearch = "";
+  state.listPage = 1;
   state.view = "auth";
   render();
 
@@ -172,6 +176,8 @@ async function resetAll() {
   try {
     await api("/vocab/reset", { method: "POST" });
     state.vocab = []; state.random = null; state.day = 1; state.answer = ""; state.check = null;
+    state.listSearch = "";
+    state.listPage = 1;
     state.revealed.clear();
     await loadList();
     await refreshRandom();
@@ -297,7 +303,7 @@ function PracticeCard() {
     ...(state.vocab || []).map(x =>
       h("option", { value: x.day_no, selected: x.day_no === state.day }, `Day ${x.day_no} — ${fmtDate(x.date)}`))
   );
-
+  select.value = state.day;
   return h("div", { class: "card" },
     h("div", { class: "card-title" }, "เลือกวันที่ต้องการตอบ"),
     h("div", { class: "row gap" },
@@ -332,9 +338,111 @@ function PracticeCard() {
 }
 
 function ListTable() {
-  const rows = state.vocab || [];
-  return h("div", { class: "card" },
-    h("div", { class: "card-title" }, "คำศัพท์ทั้งหมด"),
+  const pageSize = 10;
+  const searchLower = _norm(state.listSearch);
+
+  const allRows = state.vocab || [];
+  const filteredRows = allRows.filter(r => {
+    if (!searchLower) return true;
+    return _norm(r.word).includes(searchLower) || _norm(r.translation).includes(searchLower);
+  });
+
+  const totalPages = Math.ceil(filteredRows.length / pageSize);
+  if (state.listPage > totalPages && totalPages > 0) state.listPage = totalPages;
+  if (state.listPage < 1) state.listPage = 1;
+
+  const start = (state.listPage - 1) * pageSize;
+  const end = start + pageSize;
+  const rows = filteredRows.slice(start, end);
+
+  const searchInput = h("input", {
+    type: "text",
+    placeholder: "ค้นหาคำศัพท์ หรือ คำแปล...",
+    value: state.listSearch,
+    style: { minWidth: "260px", marginRight: "700px" },
+    onChange: (e) => {
+      state.listSearch = e.target.value;
+      state.listPage = 1;
+      render();
+    }
+  });
+
+  const prevButton = h("button", {
+    class: "ghost",
+    style: { minWidth: "80px" },
+    onClick: () => {
+      if (state.listPage > 1) {
+        state.listPage--;
+        render();
+      }
+    }
+  }, "← ก่อน");
+  prevButton.disabled = state.listPage <= 1;
+
+  const nextButton = h("button", {
+    class: "ghost",
+    style: { minWidth: "80px" },
+    onClick: () => {
+      if (state.listPage < totalPages) {
+        state.listPage++;
+        render();
+      }
+    }
+  }, "ถัดไป →");
+  nextButton.disabled = state.listPage >= totalPages;
+
+  const handlePageChange = (e) => {
+    const newPage = parseInt(e.target.value, 10);
+    const maxPage = totalPages > 0 ? totalPages : 1;
+    if (!Number.isNaN(newPage) && newPage >= 1 && newPage <= maxPage) {
+      if (state.listPage !== newPage) {
+        state.listPage = newPage;
+        render();
+      }
+    } else {
+      e.target.value = state.listPage;
+    }
+  };
+
+  const pageInput = h("input", {
+    type: "number",
+    value: state.listPage,
+    min: 1,
+    max: totalPages > 0 ? totalPages : 1,
+    style: {
+      width: "70px",
+      textAlign: "center",
+      margin: "0 6px",
+      background: "#0f131a",
+      color: "var(--fg)",
+      border: "1px solid var(--border)",
+      borderRadius: "10px",
+      padding: "10px 12px",
+      height: "40px",
+      boxSizing: "border-box"
+    },
+    
+    onKeyDown: (e) => {
+      if (e.key === 'Enter') {
+        handlePageChange(e);
+        e.target.blur();
+      }
+    },
+    onBlur: (e) => {
+      handlePageChange(e);
+    }
+  });
+
+  const totalPagesDisplay = h("span", { style: { opacity: 0.7, marginRight: "10px" } },
+    `/ ${totalPages > 0 ? totalPages : 1}`
+  );
+
+  return h("div", { class: "card", style: { overflow: "hidden" } },
+    h("div", { class: "row", style: { marginBottom: "16px", justifyContent: "space-between", alignItems: "center" } },
+      h("div", { class: "card-title", style: { marginBottom: 0 } }, "คำศัพท์ทั้งหมด"),
+      searchInput
+    ),
+
     h("table", { class: "table" },
       h("thead", null,
         h("tr", null,
@@ -345,7 +453,7 @@ function ListTable() {
           h("th", null, "Actions")
         )
       ),
-      h("tbody", null,
+      h("tbody", { style: { minHeight: "480px" } },
         ...(rows.length ? rows.map(r => {
           const key = keyOfRow(r);
           const shown = state.revealed.has(key);
@@ -355,15 +463,22 @@ function ListTable() {
             h("td", null, r.word),
             h("td", null,
               h("span", { class: shown ? "" : "masked", "aria-label": shown ? "translation" : "translation hidden" },
-                shown ? formatTranslation(r.translation) : "••••••"
+                shown ? r.translation : "••••••"
               )
             ),
             h("td", null,
               h("button", { class: "btn-xs", onClick: () => toggleReveal(r) }, shown ? "ซ่อน" : "แสดง")
             )
           );
-        }) : [h("tr", null, h("td", { colSpan: 5, style: { textAlign: "center", opacity: .7 } }, "— ไม่มีข้อมูล —"))])
+        }) : [h("tr", null, h("td", { colSpan: 5, style: { textAlign: "center", opacity: .7 } }, "— ไม่พบข้อมูล —"))])
       )
+    ),
+
+    h("div", { class: "row", style: { marginTop: "16px", justifyContent: "flex-end", alignItems: "center" } },
+      prevButton,
+      pageInput,
+      totalPagesDisplay,
+      nextButton
     )
   );
 }

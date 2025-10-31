@@ -6,7 +6,7 @@
 }
 
 *{ box-sizing: border-box; }
-html,body{ height:100%; }
+html,body{ min-height:100%; }
 
 body{
   margin:0;
@@ -51,6 +51,7 @@ a{ color:#93c5fd; text-decoration:none; }
 .card{
   background:var(--card-bg); border:1px solid var(--border);
   border-radius:16px; padding:18px;
+  overflow: hidden;
 }
 
 .card + .card{ margin-top:16px; }
@@ -247,4 +248,10 @@ body.light-mode .badge {
 body.light-mode .btn-google {
   background: #fff;
   color: #111827;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
