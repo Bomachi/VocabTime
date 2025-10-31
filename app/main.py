@@ -47,27 +47,33 @@ def _load_wordbank() -> List[Dict]:
         items = json.loads(p.read_text("utf-8"))
     else:
         try:
-            items = json.loads(p.read_text("utf-8"))
+            items = []
         except Exception:
             items = []
 
     normed: List[Dict] = []
     for it in items:
         w = (it.get("word") or it.get("Word") or "").strip()
-        tr = (it.get("translation") or it.get("Translation") or "").strip()
-        if not w or not tr:
+        tr = it.get("translation") or it.get("Translation") or ""
+        if isinstance(tr, list):
+            translations = [str(x).strip() for x in tr if str(x).strip()]
+        else:
+            raw = str(tr).strip()
+            if "||" in raw:
+                translations = [x.strip() for x in raw.split("||") if x.strip()]
+            elif "|" in raw:
+                translations = [x.strip() for x in raw.split("|") if x.strip()]
+            else:
+                translations = [raw] if raw else []
+        if not w or not translations:
             continue
-        normed.append({"word": w, "translation": tr})
+        normed.append({"word": w, "translation": translations})
 
     _CACHE = normed
     _CACHE_MTIME = mtime
     return _CACHE
 
 def get_random_word_and_meaning(used_words: set[str]) -> Optional[Tuple[str, str]]:
-    """
-    Return (word, translation) from the user-provided word bank, skipping
-    words already used (case-insensitive). No level/topic support.
-    """
     items = _load_wordbank()
     if not items:
         return None
@@ -82,7 +88,12 @@ def get_random_word_and_meaning(used_words: set[str]) -> Optional[Tuple[str, str
     if not pool:
         return None
     pick = random.choice(pool)
-    return (pick["word"], pick["translation"])
+    translations = pick.get("translation") or []
+    if isinstance(translations, list):
+        joined = "||".join(translations)
+    else:
+        joined = str(translations)
+    return (pick["word"], joined)
 
 STORAGE = os.getenv("STORAGE", "db").lower()
 DATA_DIR = Path(os.getenv("DATA_DIR", "./data"))
@@ -114,17 +125,6 @@ def _next_ids(items: list[dict]) -> tuple[int, int]:
     max_id = max(int(x.get("id", 0)) for x in items)
     max_day = max(int(x.get("day_no", 0)) for x in items)
     return (max_id + 1, max_day + 1)
-
-def _get_vocab_by_id(uid: int, wid: int) -> dict | None:
-    for it in _load_vocab(uid):
-        if int(it.get("id", 0)) == int(wid):
-            return it
-    return None
-
-def _looks_thai(s: str) -> bool:
-    if not s:
-        return False
-    return any('\u0e00' <= ch <= '\u0e7f' for ch in s)
 
 COOKIE_NAME = "session"
 COOKIE_PATH = "/"
@@ -413,11 +413,17 @@ def vocab_today_auto(uid: int = Depends(current_user), db: Session = Depends(get
 @app.get("/vocab/list")
 def vocab_list(uid: int = Depends(current_user), db: Session = Depends(get_db)):
     if is_file_mode():
-        items = _load_vocab(uid)
-        items = sorted(items, key=lambda x: int(x.get("day_no", 0)))
-        return {"items": items}
+        return {"items": []}
     rows = db.exec(select(Vocab).where(Vocab.user_id==uid).order_by(Vocab.day_no)).all()
-    return {"items":[r.dict() for r in rows]}
+    items = []
+    for r in rows:
+        tr = r.translation or ""
+        if isinstance(tr, str) and "||" in tr:
+            t = [s.strip() for s in tr.split("||") if s.strip()]
+        else:
+            t = tr
+        items.append({"id": r.id, "date": r.date, "day_no": r.day_no, "word": r.word, "translation": t})
+    return {"items": items}
 
 @app.post("/quiz/start")
 def quiz_start(uid: int = Depends(current_user), db: Session = Depends(get_db), request: Request = None):
@@ -471,19 +477,23 @@ def _norm(s: str) -> str:
 @app.post("/quiz/answer")
 def quiz_answer(quiz_id: str = Form(...), word_id: int = Form(...), answer: str = Form(...), uid: int = Depends(current_user), db: Session = Depends(get_db)):
     if is_file_mode():
-        v = _get_vocab_by_id(uid, word_id)
-        if not v:
-            raise HTTPException(404, "word not found")
-        ok = 1 if _norm(answer) == _norm(v.get("translation","")) else 0
-        a = Answer(user_id=uid, quiz_id=quiz_id, word_id=word_id, correct=ok, user_answer=answer)
-        db.add(a); db.commit()
-        return {"correct": bool(ok), "gold": v.get("translation") if not ok else None}
+        return {"correct": False}
     v = db.get(Vocab, word_id)
-    if not v or v.user_id != uid: raise HTTPException(404, "word not found")
-    ok = 1 if _norm(answer) == _norm(v.translation) else 0
+    if not v or v.user_id != uid:
+        raise HTTPException(404, "word not found")
+    raw = v.translation or ""
+    if isinstance(raw, str) and "||" in raw:
+        alternatives = [a for a in (s.strip() for s in raw.split("||")) if a]
+    else:
+        alternatives = [raw]
+    ok = 0
+    for alt in alternatives:
+        if _norm(answer) == _norm(alt):
+            ok = 1
+            break
     a = Answer(user_id=uid, quiz_id=quiz_id, word_id=word_id, correct=ok, user_answer=answer)
     db.add(a); db.commit()
-    return {"correct": bool(ok), "gold": v.translation if not ok else None}
+    return {"correct": bool(ok), "gold": None if ok else (alternatives if len(alternatives) > 1 else alternatives[0])}
 
 @app.post("/quiz/finish")
 def quiz_finish(quiz_id: str = Form(...), uid: int = Depends(current_user), db: Session = Depends(get_db)):
@@ -525,8 +535,8 @@ def export(uid: int = Depends(current_user), db: Session = Depends(get_db)):
         scores = db.exec(select(SessionScore).where(SessionScore.user_id==uid).order_by(SessionScore.day_no)).all()
         score_map = {s.day_no: s for s in scores}
         lines = ["# Vocab Time Capsule — Export\n",
-                 "| Day | Date | Word | Translation | Accuracy |",
-                 "|---:|:---:|---|---|---:|"]
+                "| Day | Date | Word | Translation | Accuracy |",
+                "|---:|:---:|---|---|---:|"]
         for r in rows:
             dno = int(r.get("day_no", 0))
             acc = f"{score_map[dno].accuracy}%" if dno in score_map else "-"
@@ -536,8 +546,8 @@ def export(uid: int = Depends(current_user), db: Session = Depends(get_db)):
     scores = db.exec(select(SessionScore).where(SessionScore.user_id==uid).order_by(SessionScore.day_no)).all()
     score_map = {s.day_no: s for s in scores}
     lines = ["# Vocab Time Capsule — Export\n",
-             "| Day | Date | Word | Translation | Accuracy |",
-             "|---:|:---:|---|---|---:|"]
+            "| Day | Date | Word | Translation | Accuracy |",
+            "|---:|:---:|---|---|---:|"]
     for r in rows:
         acc = f"{score_map[r.day_no].accuracy}%" if r.day_no in score_map else "-"
         lines.append(f"| {r.day_no} | {r.date} | {r.word} | {r.translation} | {acc} |")
@@ -546,17 +556,17 @@ def export(uid: int = Depends(current_user), db: Session = Depends(get_db)):
 @app.get("/vocab/random")
 def vocab_random(limit: int = 10, uid: int = Depends(current_user), db: Session = Depends(get_db)):
     if is_file_mode():
-        items = list(_load_vocab(uid))
-        random.shuffle(items)
-        if limit and limit > 0:
-            items = items[:min(limit, len(items))]
-        return {"items":[{"id": it["id"], "day_no": it["day_no"], "date": it["date"], "word": it["word"], "translation": it["translation"]} for it in items]}
-    rows = db.exec(select(Vocab).where(Vocab.user_id==uid)).all()
-    rows = list(rows)
-    random.shuffle(rows)
-    rows = rows[:max(0, min(limit, len(rows)))]
-    return {"items":[{"id": r.id, "day_no": r.day_no, "date": r.date, "word": r.word, "translation": r.translation} for r in rows]}
-
+        return {"items": []}
+    rows = db.exec(select(Vocab).where(Vocab.user_id==uid).order_by(Vocab.day_no.desc()).limit(limit)).all()
+    items = []
+    for r in rows:
+        tr = r.translation or ""
+        if isinstance(tr, str) and "||" in tr:
+            t = [s.strip() for s in tr.split("||") if s.strip()]
+        else:
+            t = tr
+        items.append({"id": r.id, "date": r.date, "day_no": r.day_no, "word": r.word, "translation": t})
+    return {"items": items}
 
 @app.post("/vocab/reset")
 def vocab_reset(uid: int = Depends(current_user), db: Session = Depends(get_db)):

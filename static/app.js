@@ -199,10 +199,40 @@ function setDayFromSelect(v) {
   if (!Number.isNaN(n)) { state.day = n; state.answer = ""; state.check = null; render(); }
 }
 
+function _matchesTranslation(answer, translation) {
+  const a = _norm(answer);
+  const alts = _toTranslationsArray(translation);
+  return alts.some(t => _norm(t) === a);
+}
+
+function formatTranslation(t) {
+  const alts = _toTranslationsArray(t);
+  return alts.join(" / ");
+}
+
+function _toTranslationsArray(t) {
+  if (!t && t !== 0) return [];
+  if (Array.isArray(t)) return t.map(x => (x ?? "").toString().trim()).filter(Boolean);
+  if (typeof t === "string") {
+    try {
+      const parsed = JSON.parse(t);
+      if (Array.isArray(parsed)) return parsed.map(x => (x ?? "").toString().trim()).filter(Boolean);
+    } catch {}
+    if (t.includes("||")) return t.split("||").map(x => x.trim()).filter(Boolean);
+    if (t.includes("|")) return t.split("|").map(x => x.trim()).filter(Boolean);
+    if (t.includes(",")) {
+      const parts = t.split(",").map(x => x.trim()).filter(Boolean);
+      if (parts.length > 1) return parts;
+    }
+    return [t.trim()];
+  }
+  return [String(t).trim()];
+}
+
 function checkAnswer() {
   const item = currentItem();
   if (!item) return alert("ยังไม่มีคำสำหรับวันนี้");
-  const ok = _norm(state.answer) === _norm(item.translation);
+  const ok = _matchesTranslation(state.answer, item.translation);
 
   if (ok) {
     const maxDay = state.vocab.length ? state.vocab[state.vocab.length - 1].day_no : 1;
@@ -215,7 +245,8 @@ function checkAnswer() {
     state.answer = "";
     state.check = { ok: true };
   } else {
-    state.check = { ok: false, gold: item.translation };
+    const gold = Array.isArray(item.translation) ? item.translation.join(" / ") : item.translation;
+    state.check = { ok: false, gold };
   }
   render();
 }
@@ -250,12 +281,11 @@ function Header() {
 
 function RandomCard() {
   const w = state.random ? state.random.word : "—";
-  const t = state.random ? state.random.translation : "กำลังโหลดคำศัพท์...";
+  const t = state.random ? formatTranslation(state.random.translation) : "กำลังโหลดคำศัพท์...";
 
   return h("div", { class: "card" },
-    h("div", { class: "card-title" }, "Random Pick (พร้อมความหมาย)"),
+    h("div", { class: "card-title" }, "Random Pick"),
     h("h2", null, w),
-    h("p", null, t),
   );
 }
 
@@ -325,7 +355,7 @@ function ListTable() {
             h("td", null, r.word),
             h("td", null,
               h("span", { class: shown ? "" : "masked", "aria-label": shown ? "translation" : "translation hidden" },
-                shown ? r.translation : "••••••"
+                shown ? formatTranslation(r.translation) : "••••••"
               )
             ),
             h("td", null,
