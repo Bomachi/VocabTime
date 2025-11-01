@@ -413,13 +413,6 @@ function ListTable() {
       width: "70px",
       textAlign: "center",
       margin: "0 6px",
-      background: "#0f131a",
-      color: "var(--fg)",
-      border: "1px solid var(--border)",
-      borderRadius: "10px",
-      padding: "10px 12px",
-      height: "40px",
-      boxSizing: "border-box"
     },
     
     onKeyDown: (e) => {

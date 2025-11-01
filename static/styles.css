@@ -36,6 +36,7 @@ a{
 .logo{
   width:36px; height:36px; border-radius:10px; background:#2563eb;
   display:grid; place-items:center; font-weight:700;
+  color: #fff;
 }
 .small{ color:var(--muted); font-size:12px; }
 
