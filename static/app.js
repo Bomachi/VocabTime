@@ -287,7 +287,6 @@ function Header() {
 
 function RandomCard() {
   const w = state.random ? state.random.word : "—";
-  const t = state.random ? formatTranslation(state.random.translation) : "กำลังโหลดคำศัพท์...";
 
   return h("div", { class: "card" },
     h("div", { class: "card-title" }, "Random Pick"),
@@ -456,7 +455,7 @@ function ListTable() {
             h("td", null, r.word),
             h("td", null,
               h("span", { class: shown ? "" : "masked", "aria-label": shown ? "translation" : "translation hidden" },
-                shown ? r.translation : "••••••"
+                shown ? formatTranslation(r.translation) : "••••••"
               )
             ),
             h("td", null,
@@ -477,46 +476,40 @@ function ListTable() {
 }
 
 function AuthView(){
-  return h("div", { class: "container" },
-    h("div", { class: "header" },
-      h("div", { class: "brand" },
-        h("div", { class: "logo" }, "VT"),
-        h("div", null,
-          h("h1", null, "Vocab Time Capsule"),
-          h("div", { class: "small" }, "วันละ 1 คำ + ฝึกทบทวนตามวัน")
-        )
-      )
-    ),
-
-    h("div", { class: "grid2" },
-
-      h("div", { class: "card card-auth" },
-        h("div", { class: "card-title" }, "Sign in"),
-        h("form", { onSubmit: signin },
-          h("input", { id: "signin-email", type: "email", placeholder: "อีเมล", required: true }),
-          h("input", { id: "signin-pass", type: "password", placeholder: "รหัสผ่าน", required: true, style:{marginLeft:"8px", marginRight:"8px"} }),
-          h("button", { type: "submit" }, "Sign in")
-        )
-      ),
-
-      h("div", { class: "card card-auth" },
-        h("div", { class: "card-title" }, "Sign up"),
-        h("form", { onSubmit: signup },
-          h("input", { id: "signup-email", type: "email", placeholder: "อีเมล", required: true }),
-          h("input", { id: "signup-pass", type: "password", placeholder: "รหัสผ่าน", required: true, style:{marginLeft:"8px", marginRight:"8px"} }),
-          h("button", { type: "submit" }, "Sign up")
-        )
-      )
-
-    ),
-
-    h("div", { class: "card" },
-      h("div", { class: "card-title" }, "หรือเข้าสู่ระบบด้วย"),
-      h("div", { class: "row gap" },
-        h("a", { class: "btn-google", href: "/auth/google/login" }, "Continue with Google")
-      )
+ return h("div", { class: "container" },
+  h("div", { class: "header" },
+   h("div", { class: "brand" },
+    h("div", { class: "logo" }, "VT"),
+    h("div", null,
+     h("h1", null, "Vocab Time Capsule"),
+     h("div", { class: "small" }, "วันละ 1 คำ + ฝึกทบทวนตามวัน")
     )
-  );
+   )
+  ),
+
+  h("div", { class: "grid2" },
+
+   h("div", { class: "card card-auth" },
+    h("div", { class: "card-title" }, "Sign up"),
+    h("form", { onSubmit: signup },
+     h("input", { id: "signup-email", type: "email", placeholder: "อีเมล", required: true }),
+     h("input", { id: "signup-pass", type: "password", placeholder: "รหัสผ่าน", required: true })
+    )
+   ),
+
+   h("div", { class: "card card-auth" },
+    h("div", { class: "card-title" }, "Sign in"),
+    h("form", { onSubmit: signin },
+     h("input", { id: "signin-email", type: "email", placeholder: "อีเมล", required: true }),
+     h("input", { id: "signin-pass", type: "password", placeholder: "รหัสผ่าน", required: true })
+    ),
+        
+        h("div", { class: "divider-or" }, "หรือ"),
+    h("a", { class: "btn-google", href: "/auth/google/login" }, "Continue with Google")
+   )
+
+  )
+ );
 }
 
 function MainView() {
@@ -537,14 +530,16 @@ function Loading() {
 }
 
 function render() {
-  const root = $("#app");
-  if (!root) return;
-  root.innerHTML = "";
-  let view;
-  if (state.view === "loading") view = Loading();
-  else if (state.view === "auth") view = AuthView();
-  else view = MainView();
-  root.appendChild(view);
+ const root = $("#app");
+ if (!root) return;
+ root.innerHTML = "";
+ document.body.classList.remove("view-loading", "view-auth", "view-main");
+ document.body.classList.add(`view-${state.view}`);
+ let view;
+ if (state.view === "loading") view = Loading();
+ else if (state.view === "auth") view = AuthView();
+ else view = MainView();
+ root.appendChild(view);
 }
 
 async function initAfterAuth() {

@@ -64,7 +64,12 @@ a{
 
 .card + .card{ margin-top:16px; }
 
-.card-title{ font-weight:600; opacity:.9; margin-bottom:10px; }
+.card-title{ font-weight:600; opacity:.9; margin-bottom:10px; }  
+ 
+body.view-auth .card-auth .card-title {  
+  text-align: center;
+  margin-bottom: 20px;
+}
 
 .row{ display:flex; align-items:center; }
 .gap{ gap:10px; }
@@ -73,14 +78,14 @@ a{
   position: relative;
   display:grid;
   grid-template-columns: 1fr 1fr;
-  gap: 22px;
-  align-items: stretch;
+  gap: 40px;
+  align-items: start;
   margin-bottom: 22px;
 }
 
-.grid2 .card{ 
-  margin-top: 0; 
-  height: 100%;
+.grid2 .card{
+  margin-top: 0;
+  height: auto;
   display: flex;
   flex-direction: column;
 }
@@ -129,18 +134,54 @@ th{
 }
 
 .card-auth form {
+ width: 80%; 
+ max-width: 350px; 
+ margin: 0 auto; 
+ display: flex;
+ flex-direction: column;
+ gap: 12px;
+}
+
+.card-auth form input {
+  width: 100%;
+}
+
+body.view-auth .card-auth .divider-or,
+body.view-auth .card-auth .btn-google {
+  width: 80%;
+  max-width: 350px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+body.view-auth .container {
+ max-width: 760px;
+}
+
+body.view-auth .card-auth {
+ padding-top: 60px;
+ padding-bottom: 60px;
+}
+
+.divider-or {
   display: flex;
   align-items: center;
+  text-align: center;
+  color: var(--muted);
+  font-size: 12px;
+  margin: 16px 0;
 }
-
-.card-auth form button[type="submit"] {
-  margin-left: auto;
-}
-
-.card-auth form input[type="email"],
-.card-auth form input[type="password"] {
+.divider-or::before,
+.divider-or::after {
+  content: '';
   flex: 1;
-  min-width: 130px;
+  border-bottom: 1px solid var(--border);
+}
+.divider-or:not(:empty)::before {
+  margin-right: .5em;
+}
+.divider-or:not(:empty)::after {
+  margin-left: .5em;
 }
 
 button {
@@ -217,11 +258,16 @@ select:focus-visible {
   transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 .btn-xs:hover{ border-color: rgba(255,255,255,.18); filter: brightness(1.05); }
+
 .btn-google{
-  display:inline-flex; align-items:center; justify-content:center;
+  display: flex;
+  align-items:center; 
+  justify-content:center;
   background:#fff; color:#111827; border:1px solid rgba(255,255,255,.12);
   border-radius:10px; padding:10px 14px; font-weight:700; text-decoration:none;
+  box-sizing: border-box;
 }
+
 .btn-google:hover{ filter:brightness(0.96); }
 body.light-mode {
   --card-bg: #ffffff;

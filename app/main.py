@@ -203,10 +203,6 @@ def current_user(req: Request) -> int:
         raise HTTPException(401, "bad session")
     return int(data.get("uid"))
 
-@app.get("/__routes")
-def __routes():
-    return [r.path for r in app.routes]
-
 @app.post("/auth/signup")
 def signup(email: str = Form(...), password: str = Form(...), resp: Response = None, db: Session = Depends(get_db)):
     if db.exec(select(User).where(User.email == email)).first():
