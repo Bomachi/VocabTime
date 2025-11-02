@@ -287,7 +287,6 @@ function Header() {
 
 function RandomCard() {
   const w = state.random ? state.random.word : "—";
-  const t = state.random ? formatTranslation(state.random.translation) : "กำลังโหลดคำศัพท์...";
 
   return h("div", { class: "card" },
     h("div", { class: "card-title" }, "Random Pick"),
@@ -456,7 +455,7 @@ function ListTable() {
             h("td", null, r.word),
             h("td", null,
               h("span", { class: shown ? "" : "masked", "aria-label": shown ? "translation" : "translation hidden" },
-                shown ? r.translation : "••••••"
+                shown ? formatTranslation(r.translation) : "••••••"
               )
             ),
             h("td", null,
