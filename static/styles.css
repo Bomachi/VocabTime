@@ -390,10 +390,10 @@ body.light-mode .badge {
 body.light-mode .btn-theme {
   transform: rotateY(180deg);
 }
-.btn-theme:hover .icon-sun {
+body:not(.light-mode) .btn-theme:hover .icon-sun {
   transform: scale(1.25);
 }
 
-.btn-theme:hover .icon-moon {
+body.light-mode .btn-theme:hover .icon-moon {
   transform: rotateY(180deg) scale(1.25);
 }
