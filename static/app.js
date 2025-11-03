@@ -278,7 +278,10 @@ function Header() {
     ),
     h("div", { class: "right" },
       state.me ? h("span", { class: "badge" }, state.me.email || "") : null,
-      h("button", { class: "ghost", onClick: toggleTheme, title: "เปลี่ยนธีม" }, "☀️/🌙"),
+      h("button", { class: "ghost btn-theme", onClick: toggleTheme, title: "เปลี่ยนธีม" },
+        h("span", { class: "icon-sun" }, "☀️"),
+        h("span", { class: "icon-moon" }, "🌙")
+      ),
       state.me ? h("button", { class: "ghost", onClick: resetAll }, "Reset") : null,
       state.me ? h("button", { class: "ghost", onClick: logout }, "Logout") : null
     )
