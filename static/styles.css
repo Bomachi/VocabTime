@@ -16,9 +16,14 @@ body{
     radial-gradient(1200px 600px at 15% -10%, #3b82f6 0%, transparent 60%),
     radial-gradient(1200px 600px at 85% -10%, #a855f7 0%, transparent 60%),
     #0b0e14;
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
-a{ color:#93c5fd; text-decoration:none; }
+a{ 
+  color:#93c5fd; 
+  text-decoration:none; 
+  transition: color 0.3s ease;
+}
 
 .container{ max-width:1100px; margin: 40px auto; padding: 0 16px; }
 
@@ -31,6 +36,7 @@ a{ color:#93c5fd; text-decoration:none; }
 .logo{
   width:36px; height:36px; border-radius:10px; background:#2563eb;
   display:grid; place-items:center; font-weight:700;
+  color: #fff;
 }
 .small{ color:var(--muted); font-size:12px; }
 
@@ -38,6 +44,7 @@ a{ color:#93c5fd; text-decoration:none; }
 .badge{
   padding:6px 10px; border-radius:999px; background:var(--card-bg);
   border:1px solid var(--border); font-size:12px;
+  transition: background 0.3s ease, border-color 0.3s ease;
 }
 .ghost{
   background:transparent; border:1px solid var(--border); color:var(--fg);
@@ -52,11 +59,17 @@ a{ color:#93c5fd; text-decoration:none; }
   background:var(--card-bg); border:1px solid var(--border);
   border-radius:16px; padding:18px;
   overflow: hidden;
+  transition: background 0.3s ease, border-color 0.3s ease;
 }
 
 .card + .card{ margin-top:16px; }
 
-.card-title{ font-weight:600; opacity:.9; margin-bottom:10px; }
+.card-title{ font-weight:600; opacity:.9; margin-bottom:10px; }  
+ 
+body.view-auth .card-auth .card-title {  
+  text-align: center;
+  margin-bottom: 20px;
+}
 
 .row{ display:flex; align-items:center; }
 .gap{ gap:10px; }
@@ -65,14 +78,14 @@ a{ color:#93c5fd; text-decoration:none; }
   position: relative;
   display:grid;
   grid-template-columns: 1fr 1fr;
-  gap: 22px;
-  align-items: stretch;
+  gap: 40px;
+  align-items: start;
   margin-bottom: 22px;
 }
 
-.grid2 .card{ 
-  margin-top: 0; 
-  height: 100%;
+.grid2 .card{
+  margin-top: 0;
+  height: auto;
   display: flex;
   flex-direction: column;
 }
@@ -90,16 +103,26 @@ a{ color:#93c5fd; text-decoration:none; }
 
 .grid2 > *{ padding-inline: 6px; }
 
-input[type="text"], input[type="email"], input[type="password"], select{
+input[type="text"], input[type="email"], input[type="password"], select, input[type="number"]{
   background:#0f131a; color:var(--fg); border:1px solid var(--border);
   border-radius:10px; padding:10px 12px; outline:none; min-width: 220px;
+  transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
 button{ font-weight:600; }
 
 table{ width:100%; border-collapse: collapse; }
-th,td{ padding:10px 12px; border-top:1px solid var(--border); }
-th{ text-align:left; color:#a7b0bd; font-weight:600; }
+th,td{ 
+  padding:10px 12px; 
+  border-top:1px solid var(--border); 
+  transition: border-color 0.3s ease;
+}
+th{ 
+  text-align:left; 
+  color:#a7b0bd; 
+  font-weight:600; 
+  transition: color 0.3s ease;
+}
 
 .ok{ margin-top:10px; color:#4ade80; font-weight:600; }
 .ng{ margin-top:10px; color:#fca5a5; }
@@ -111,18 +134,55 @@ th{ text-align:left; color:#a7b0bd; font-weight:600; }
 }
 
 .card-auth form {
+ width: 80%; 
+ max-width: 350px; 
+ margin: 0 auto; 
+ display: flex;
+ flex-direction: column;
+ gap: 15px;
+}
+
+.card-auth form input,
+.card-auth form button {
+  width: 100%;
+}
+
+body.view-auth .card-auth .divider-or,
+body.view-auth .card-auth .btn-google {
+  width: 80%;
+  max-width: 350px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+body.view-auth .container {
+ max-width: 760px;
+}
+
+body.view-auth .card-auth {
+ padding-top: 45px;
+ padding-bottom: 45px;
+}
+
+.divider-or {
   display: flex;
   align-items: center;
+  text-align: center;
+  color: var(--muted);
+  font-size: 12px;
+  margin: 16px 0;
 }
-
-.card-auth form button[type="submit"] {
-  margin-left: auto;
-}
-
-.card-auth form input[type="email"],
-.card-auth form input[type="password"] {
+.divider-or::before,
+.divider-or::after {
+  content: '';
   flex: 1;
-  min-width: 130px;
+  border-bottom: 1px solid var(--border);
+}
+.divider-or:not(:empty)::before {
+  margin-right: .5em;
+}
+.divider-or:not(:empty)::after {
+  margin-left: .5em;
 }
 
 button {
@@ -137,6 +197,7 @@ button {
   line-height: 1;
   height: 40px;
   cursor: pointer;
+  transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
 .ghost {
@@ -149,6 +210,15 @@ input[type="text"],
 input[type="email"],
 input[type="password"],
 select {
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+}
+input[type="text"],
+input[type="email"],
+input[type="password"],
+select,
+input[type="number"] {
   height: 40px;
   display: inline-flex;
   align-items: center;
@@ -186,13 +256,19 @@ select:focus-visible {
   line-height: 1;
   height: 30px;
   cursor: pointer;
+  transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 .btn-xs:hover{ border-color: rgba(255,255,255,.18); filter: brightness(1.05); }
+
 .btn-google{
-  display:inline-flex; align-items:center; justify-content:center;
+  display: flex;
+  align-items:center; 
+  justify-content:center;
   background:#fff; color:#111827; border:1px solid rgba(255,255,255,.12);
   border-radius:10px; padding:10px 14px; font-weight:700; text-decoration:none;
+  box-sizing: border-box;
 }
+
 .btn-google:hover{ filter:brightness(0.96); }
 body.light-mode {
   --card-bg: #ffffff;
@@ -212,7 +288,8 @@ body.light-mode a {
 body.light-mode input[type="text"],
 body.light-mode input[type="email"],
 body.light-mode input[type="password"],
-body.light-mode select {
+body.light-mode select,
+body.light-mode input[type="number"] {
   background: #ffffff;
   color: var(--fg);
   border: 1px solid var(--border);
@@ -254,4 +331,70 @@ input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
+}
+body.light-mode .card {
+  border-color: transparent;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06);
+}
+
+body.light-mode .badge {
+  border-color: transparent;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+body.view-main .grid2 .card:first-child {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding-top: 24px;
+  padding-bottom: 24px;
+  text-align: center;
+}
+
+.grid2 .card:first-child h2 {
+  font-size: 2.25rem;
+  color: var(--fg);
+  margin-top: 10px;
+  margin-bottom: 10px;
+  transition: color 0.3s ease;
+}
+.btn-theme {
+  perspective: 1000px; 
+  transform-style: preserve-3d;
+  border-radius: 999px;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  position: relative; 
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+.btn-theme .icon-sun,
+.btn-theme .icon-moon {
+  position: absolute; 
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 1.25rem; 
+  backface-visibility: hidden;
+  transition: color 0.3s ease, transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-theme .icon-moon {
+  transform: rotateY(180deg);
+}
+
+body.light-mode .btn-theme {
+  transform: rotateY(180deg);
+}
+body:not(.light-mode) .btn-theme:hover .icon-sun {
+  transform: scale(1.25);
+}
+
+body.light-mode .btn-theme:hover .icon-moon {
+  transform: rotateY(180deg) scale(1.25);
 }
