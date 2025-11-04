@@ -157,31 +157,6 @@ class Vocab(SQLModel, table=True):
     word: str
     translation: str
 
-class SessionQuiz(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
-    user_id: int = Field(index=True)
-    quiz_id: str = Field(index=True)
-    day_no: int
-    created_at: str = Field(default_factory=lambda: datetime.datetime.utcnow().isoformat())
-    finished: int = Field(default=0)
-
-class Answer(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
-    user_id: int = Field(index=True)
-    quiz_id: str = Field(index=True)
-    word_id: int
-    correct: int
-    user_answer: str
-
-class SessionScore(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
-    user_id: int = Field(index=True)
-    day_no: int
-    ts: str = Field(default_factory=lambda: datetime.datetime.utcnow().isoformat())
-    total: int
-    correct: int
-    accuracy: float
-
 def init_db():
     SQLModel.metadata.create_all(engine)
 
@@ -425,48 +400,6 @@ def vocab_list(uid: int = Depends(current_user), db: Session = Depends(get_db)):
         items.append({"id": r.id, "date": r.date, "day_no": r.day_no, "word": r.word, "translation": t})
     return {"items": items}
 
-@app.post("/quiz/start")
-def quiz_start(uid: int = Depends(current_user), db: Session = Depends(get_db), request: Request = None):
-    qparams = request.query_params if request else {}
-    shuffle = qparams.get("shuffle", "1") not in ("0", "false", "False")
-    try:
-        limit = int(qparams.get("limit", "0"))
-    except ValueError:
-        limit = 0
-
-    if is_file_mode():
-        items = _load_vocab(uid)
-        if not items:
-            raise HTTPException(400, "no vocab yet")
-        items = sorted(items, key=lambda x: int(x.get("day_no", 0)))
-        last = items[-1]
-        day_no = int(last.get("day_no", 1))
-        quiz_id = secrets.token_hex(8)
-        q = SessionQuiz(user_id=uid, quiz_id=quiz_id, day_no=day_no, finished=0)
-        db.add(q); db.commit()
-        pick = list(items)
-        if shuffle:
-            random.shuffle(pick)
-        if limit and 0 < limit < len(pick):
-            pick = pick[:limit]
-        return {"quiz_id": quiz_id, "day_no": day_no,
-                "items":[{"id": it["id"], "day_no": it["day_no"], "word": it["word"]} for it in pick]}
-    last = db.exec(select(Vocab).where(Vocab.user_id==uid).order_by(Vocab.day_no.desc())).first()
-    if not last:
-        raise HTTPException(400, "no vocab yet")
-    day_no = last.day_no
-    quiz_id = secrets.token_hex(8)
-    q = SessionQuiz(user_id=uid, quiz_id=quiz_id, day_no=day_no, finished=0)
-    db.add(q); db.commit()
-    items = db.exec(select(Vocab).where(Vocab.user_id==uid, Vocab.day_no<=day_no).order_by(Vocab.day_no)).all()
-    items = list(items)
-    if shuffle:
-        random.shuffle(items)
-    if limit and 0 < limit < len(items):
-        items = items[:limit]
-    return {"quiz_id": quiz_id, "day_no": day_no,
-            "items":[{"id": it.id, "day_no": it.day_no, "word": it.word} for it in items]}
-
 def _norm(s: str) -> str:
     import re
     s = (s or "").strip().lower()
@@ -474,83 +407,23 @@ def _norm(s: str) -> str:
     s = re.sub(r"[\"'`~!@#$%^&*()_+\-=\[\]{};:,.?/\\|<>]", "", s)
     return s
 
-@app.post("/quiz/answer")
-def quiz_answer(quiz_id: str = Form(...), word_id: int = Form(...), answer: str = Form(...), uid: int = Depends(current_user), db: Session = Depends(get_db)):
-    if is_file_mode():
-        return {"correct": False}
-    v = db.get(Vocab, word_id)
-    if not v or v.user_id != uid:
-        raise HTTPException(404, "word not found")
-    raw = v.translation or ""
-    if isinstance(raw, str) and "||" in raw:
-        alternatives = [a for a in (s.strip() for s in raw.split("||")) if a]
-    else:
-        alternatives = [raw]
-    ok = 0
-    for alt in alternatives:
-        if _norm(answer) == _norm(alt):
-            ok = 1
-            break
-    a = Answer(user_id=uid, quiz_id=quiz_id, word_id=word_id, correct=ok, user_answer=answer)
-    db.add(a); db.commit()
-    return {"correct": bool(ok), "gold": None if ok else (alternatives if len(alternatives) > 1 else alternatives[0])}
-
-@app.post("/quiz/finish")
-def quiz_finish(quiz_id: str = Form(...), uid: int = Depends(current_user), db: Session = Depends(get_db)):
-    q = db.exec(select(SessionQuiz).where(SessionQuiz.user_id==uid, SessionQuiz.quiz_id==quiz_id)).first()
-    if not q: raise HTTPException(404, "quiz not found")
-    if q.finished: return {"ok": True, "message":"already finished"}
-    ans = db.exec(select(Answer).where(Answer.user_id==uid, Answer.quiz_id==quiz_id)).all()
-    total = len(ans); correct = sum(1 for a in ans if a.correct)
-    acc = round(correct/total*100, 2) if total else 0.0
-    sc = SessionScore(user_id=uid, day_no=q.day_no, total=total, correct=correct, accuracy=acc)
-    q.finished = 1
-    db.add(sc); db.add(q); db.commit()
-    return {"ok": True, "total": total, "correct": correct, "accuracy": acc}
-
-@app.get("/stats")
-def stats(uid: int = Depends(current_user), db: Session = Depends(get_db)):
-    if is_file_mode():
-        items = _load_vocab(uid)
-        max_day = max((int(x.get("day_no", 0)) for x in items), default=0)
-    else:
-        last_vocab = db.exec(select(Vocab).where(Vocab.user_id==uid).order_by(Vocab.day_no.desc())).first()
-        max_day = last_vocab.day_no if last_vocab else 0
-    streak = 0
-    for dno in range(max_day, 0, -1):
-        got = db.exec(select(SessionScore).where(SessionScore.user_id==uid, SessionScore.day_no==dno)).first()
-        if got: streak += 1
-        else: break
-    last = db.exec(select(SessionScore).where(SessionScore.user_id==uid).order_by(SessionScore.day_no.desc())).first()
-    return {
-        "total_words": max_day,
-        "streak": streak,
-        "last": {"day_no": last.day_no, "accuracy": last.accuracy} if last else None
-    }
-
 @app.get("/export", response_class=PlainTextResponse)
 def export(uid: int = Depends(current_user), db: Session = Depends(get_db)):
     if is_file_mode():
         rows = sorted(_load_vocab(uid), key=lambda x: int(x.get("day_no", 0)))
-        scores = db.exec(select(SessionScore).where(SessionScore.user_id==uid).order_by(SessionScore.day_no)).all()
-        score_map = {s.day_no: s for s in scores}
         lines = ["# Vocab Time Capsule — Export\n",
-                "| Day | Date | Word | Translation | Accuracy |",
-                "|---:|:---:|---|---|---:|"]
+                 "| Day | Date | Word | Translation |",
+                 "|---:|:---:|---|---|"]
         for r in rows:
             dno = int(r.get("day_no", 0))
-            acc = f"{score_map[dno].accuracy}%" if dno in score_map else "-"
-            lines.append(f"| {dno} | {r.get('date','')} | {r.get('word','')} | {r.get('translation','')} | {acc} |")
+            lines.append(f"| {dno} | {r.get('date','')} | {r.get('word','')} | {r.get('translation','')} |")
         return "\n".join(lines)
     rows = db.exec(select(Vocab).where(Vocab.user_id==uid).order_by(Vocab.day_no)).all()
-    scores = db.exec(select(SessionScore).where(SessionScore.user_id==uid).order_by(SessionScore.day_no)).all()
-    score_map = {s.day_no: s for s in scores}
     lines = ["# Vocab Time Capsule — Export\n",
-            "| Day | Date | Word | Translation | Accuracy |",
-            "|---:|:---:|---|---|---:|"]
+             "| Day | Date | Word | Translation |",
+             "|---:|:---:|---|---|"]
     for r in rows:
-        acc = f"{score_map[r.day_no].accuracy}%" if r.day_no in score_map else "-"
-        lines.append(f"| {r.day_no} | {r.date} | {r.word} | {r.translation} | {acc} |")
+        lines.append(f"| {r.day_no} | {r.date} | {r.word} | {r.translation} |")
     return "\n".join(lines)
 
 @app.get("/vocab/random")
@@ -576,9 +449,6 @@ def vocab_reset(uid: int = Depends(current_user), db: Session = Depends(get_db))
             p.unlink()
     else:
         db.exec(delete(Vocab).where(Vocab.user_id == uid))
-    db.exec(delete(Answer).where(Answer.user_id == uid))
-    db.exec(delete(SessionQuiz).where(SessionQuiz.user_id == uid))
-    db.exec(delete(SessionScore).where(SessionScore.user_id == uid))
     db.commit()
     return {"ok": True, "message": "reset done"}
 
