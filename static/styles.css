@@ -142,7 +142,8 @@ th{
  gap: 15px;
 }
 
-.card-auth form input {
+.card-auth form input,
+.card-auth form button {
   width: 100%;
 }
 
@@ -159,8 +160,8 @@ body.view-auth .container {
 }
 
 body.view-auth .card-auth {
- padding-top: 60px;
- padding-bottom: 60px;
+ padding-top: 45px;
+ padding-bottom: 45px;
 }
 
 .divider-or {

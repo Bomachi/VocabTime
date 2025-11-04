@@ -496,7 +496,8 @@ function AuthView(){
     h("div", { class: "card-title" }, "Sign up"),
     h("form", { onSubmit: signup },
      h("input", { id: "signup-email", type: "email", placeholder: "อีเมล", required: true }),
-     h("input", { id: "signup-pass", type: "password", placeholder: "รหัสผ่าน", required: true })
+     h("input", { id: "signup-pass", type: "password", placeholder: "รหัสผ่าน", required: true }),
+     h("button", { type: "submit" }, "Sign up")
     )
    ),
 
@@ -504,7 +505,8 @@ function AuthView(){
     h("div", { class: "card-title" }, "Sign in"),
     h("form", { onSubmit: signin },
      h("input", { id: "signin-email", type: "email", placeholder: "อีเมล", required: true }),
-     h("input", { id: "signin-pass", type: "password", placeholder: "รหัสผ่าน", required: true })
+     h("input", { id: "signin-pass", type: "password", placeholder: "รหัสผ่าน", required: true }),
+     h("button", { type: "submit" }, "Sign in")
     ),
         
         h("div", { class: "divider-or" }, "หรือ"),
