@@ -139,7 +139,7 @@ th{
  margin: 0 auto; 
  display: flex;
  flex-direction: column;
- gap: 12px;
+ gap: 15px;
 }
 
 .card-auth form input {
@@ -341,7 +341,7 @@ body.light-mode .badge {
   box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
-.grid2 .card:first-child {
+body.view-main .grid2 .card:first-child {
   display: flex;
   flex-direction: column;
   justify-content: center;
